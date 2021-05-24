@@ -1,0 +1,74 @@
+﻿@using Backend6.Services
+@model Backend6.Models.ForumTopic
+@inject IUserPermissionsService UserPermissions
+@{
+    ViewData["Title"] = "Topic";
+    var canEditForumTopic = UserPermissions.CanEditForumTopic(this.Model);
+}
+
+<h2>@Model.Name</h2>
+@if (User.Identity.IsAuthenticated)
+{
+    <p>
+        @if(User.Identity.IsAuthenticated)
+        {
+            <a asp-action="Create" asp-controller="ForumMessages" asp-route-id="@Model.Id">Reply</a>
+        }
+        @if(canEditForumTopic)
+        {
+            <span> | </span> <a asp-action="Edit" asp-controller="ForumTopics" asp-route-id="@Model.Id">Edit</a>
+            <span> | </span> <a asp-action="Delete" asp-controller="ForumTopics" asp-route-id="@Model.Id">Delete</a>
+        }
+        | <a asp-action="Details" asp-controller="Forums" asp-route-id="@Model.ForumId">Back to @Model.Forum.Name</a>
+    </p>
+}
+
+
+
+@if (Model.ForumMessages != null)
+{
+    foreach (var i in Model.ForumMessages.OrderByDescending(x => x.Created))
+    {
+        @*Massages*@
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <div>
+                    @i.Creator.UserName, @i.Created (edited @i.Modified)
+                    @if(UserPermissions.CanEditForumMessage(i))
+                    {
+                        <span> | </span> <a asp-action="Edit" asp-controller="ForumMessages" asp-route-id="@i.Id">Edit</a>
+                        <span> | </span> <a asp-action="Delete" asp-controller="ForumMessages" asp-route-id="@i.Id">Delete</a>
+                        <span> | </span> <a asp-action="Create" asp-controller="ForumMessageAttachments" asp-route-id="@i.Id">Attach</a>
+                    }
+                </div>
+            </div>
+            <div class="panel-body">
+                <div class="forum-message-text">
+                    @i.Text
+                </div>
+                <div class="row">
+                    @if (i.Attachments != null)
+                    {
+                        foreach (var att in i.Attachments.OrderByDescending(x => x.Created))
+                        {
+                            @*Вложение*@
+                            <div class="col-sm-6 col-md-4">
+                                <div class="thumbnail">
+                                    <a href="@att.FilePath" target="__blank">
+                                        <img src="@att.FilePath" alt="Attachment" />
+                                    </a>
+                                </div>
+                                @if (UserPermissions.CanEditForumMessage(i))
+                                {
+                                    <div class="caption">
+                                        <p><a asp-action="Delete" asp-controller="ForumMessageAttachments" asp-route-id="@att.Id" class="btn btn-sm btn-danger">Delete</a></p>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    }
+}
